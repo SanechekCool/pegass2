@@ -34,6 +34,8 @@ export default new Vuex.Store({
 		},
 		newMessage(state, message){
 			state.messages.push(message)
+			state.data[message.roomname]["message"]["text"] = message.text
+			state.data[message.roomname]["count"] += 1 
 		},
 		createUser(state, token){
 			axios({

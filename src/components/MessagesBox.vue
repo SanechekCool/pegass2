@@ -113,11 +113,7 @@
 				this.$store.commit("getMessages", response)
 				this.loading = false
 			})
-			this.socket.on("new_message", (resp) => {
-				console.log("asd")
-				this.$store.commit("newMessage", resp)
-				this.$store.state.data[this.current_room]["count"] = 0
-			})
+			
 		},
 		watch: {
 			messages(){

@@ -101,6 +101,10 @@
 			personal_name() {
 				return localStorage.username
 			},
+			current_room(){
+				let names = [this.username, this.personal_name]
+				return names.sort().join("_")
+			},
 		},
 		methods: {
 			back(model) {
@@ -135,14 +139,17 @@
 					token: localStorage.token 
 				}
 			})
-			this.socket.once("connect", () => {
+			this.socket.on("connect", () => {
 				this.socket.emit('initialize', {"username": localStorage.username})
 			})
-			this.socket.once("get_messages", (data) => {
+			this.socket.on("get_messages", (data) => {
 				this.loader = false
 				this.$store.dispatch("RECIEVE_DATA", data)
 			})
-			
+			this.socket.on("new_message", (resp) => {
+				this.$store.commit("newMessage", resp)
+				
+			})
 			if (localStorage.username == undefined){
 				this.$router.push("/login")
 			}

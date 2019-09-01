@@ -6,6 +6,7 @@
         solo
         color='#000'
         v-model='message'
+        autofocus
         @keyup.enter='sendMessage' 
         :append-outer-icon="'send'"
         @click:append-outer="sendMessage"></v-text-field>
