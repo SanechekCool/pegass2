@@ -4,7 +4,7 @@ import Login from './components/Login.vue'
 import Profile from './components/Profile.vue'
 import Main from './components/Main.vue'
 import Ex from './components/Ex.vue'
-// import MessagesBox from './components/MessagesBox.vue'
+import Register from './components/Register.vue'
 Vue.use(Router)
 
 export default new Router({
@@ -19,6 +19,11 @@ export default new Router({
       path: '/login',
       name: 'login',
       component: Login
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: Register
     },
     // {
     //   path: '/im/:username',

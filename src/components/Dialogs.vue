@@ -16,12 +16,13 @@
 					prepend-inner-icon="search"
 					></v-text-field>
 				</v-flex>
-			<v-layout v-if='loader' align-center justify-center row fill-height>
-				<v-progress-circular
-					indeterminate
-					:color="color"
-				></v-progress-circular>
-			</v-layout>
+			<div v-if='loader' id='cont_anim' class='d-flex justify-center '>
+					<img id='animation' src="./assets/logo1x.svg" alt="">
+			</div>
+			<div v-if='show' class='d-flex justify-center flex-column'>
+				<h2>Упс! Кажется, что-то пошло не так. Пожалуйста, обновите страницу.</h2><br>
+				<img class='align-self-center' src="https://kirovzemlya.ru/wp-content/uploads/2017/04/ios7-sad-icon.png" style='width: 200px; height: 200px;' alt="">
+			</div>
 			<div v-else>
 				<v-flex xs12 v-for='(item, i) in current_dialogs' :key='i'  >
 					<div id='card' class='d-flex justify-space-between' @click='start(data[item]["users"][0])'>
@@ -38,7 +39,7 @@
 								
 							</div>
 						</div>
-						<div class='d-inline-flex mt-1 justify-end mr-1'>
+						<div class='d-inline-flex mt-1 justify-end mr-1' id='box'>
 							<v-badge v-if='data[item]["count"] > 0' left :color="color" small class='mt-8 mr-12'>
 								<span slot="badge" class=''>{{data[item]["count"]}}</span>
 							</v-badge> 
@@ -90,15 +91,16 @@
 
 <script>
 	import axios from 'axios'
+import { setTimeout } from 'timers';
 	export default {
 		name: 'Dialogs',
-		props: ["socket"],
+		props: ["socket", "loader"],
 		data(){
 			return{
 				text: '',
 				flag: true,
-				loader: true,
 				username: '',
+				show: false,
 				dia_users: '',
 				delete: false,
 				color: "#5C6BC0",
@@ -107,9 +109,9 @@
 		},
 		
 		computed: {
-			user(){
-				return this.$store.state.user
-			},
+			// user(){
+			// 	return this.$store.state.user
+			// },
 			dialogs(){
 				return this.$store.state.dialogs
 			},
@@ -159,19 +161,23 @@
 			},
 			
 		},
-		created(){
+		created() {
 			setTimeout(() => {
-				this.loader = false
-			}, 500)
-			
-		},
-		watch: {
-			
+				if (this.loader == true) {
+					this.show = true
+				}
+			}, 3000)
 		}
 	}
 </script>
 
 <style>
+	
+	#animation {
+		height: 100px;
+		width: 100px;
+		animation: rotation 1s infinite alternate;
+	}
 	#card{
 		height: 70px;
 	}
@@ -181,6 +187,14 @@
 	}
 	
 	
+	@keyframes rotation {
+		0% {
+        	transform: rotate(0deg);
+		}
+		100% {
+			transform: rotate(360deg);
+		}
+	}
 
 	@media screen and (max-width: 1265px) {
 		#divider{

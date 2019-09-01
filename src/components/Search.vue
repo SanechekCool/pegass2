@@ -5,14 +5,14 @@
             <v-btn :color="color" text dark class='mt-5' @click='search'>Поиск</v-btn>
         </v-row>
         <v-card v-if='foundUser.username != undefined' class='mx-3' height='90'>
-            <div  class='d-flex justify-space-between' @click='start(data[item]["users"][0])'>
+            <div  class='d-flex justify-space-between' >
                 <div class="d-inline-flex">
                     <v-avatar size="80" :tile='false' class='mt-2 ml-3'>
                         <img src="https://avatars.mds.yandex.net/get-pdb/1530302/8676c879-8108-44d4-8009-736ac8e067bb/s1200?webp=false" >
                     </v-avatar>
                     <div class='d-flex flex-column ml-4 mt-2'>
                         <h2 class='font-weight-thick align-self-start'>{{foundUser.username}}</h2>
-                        <small class='font-weight-thin mt-1 align-self-start'>*email*</small>
+                        <small class='font-weight-thin mt-1 align-self-start'>{{foundUser.email}}</small>
                     </div>
                 </div>
                 <div class='d-inline-flex mt-1 justify-end mr-1'>
@@ -56,7 +56,7 @@
 					"name": names.join("_"),
 					"users": names,
                 }
-                this.$emit("startDialog", data)
+                this.$emit("startDialog", data, this.foundUser.username)
 				
 			}
         }

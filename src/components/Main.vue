@@ -7,7 +7,7 @@
     	>
 			 <v-list-item>
 				<v-list-item-avatar>
-					<v-img src="https://avatars.mds.yandex.net/get-pdb/1530302/8676c879-8108-44d4-8009-736ac8e067bb/s1200?webp=false"></v-img>
+					<!-- <v-img :src="user.img_url"></v-img> -->
 				</v-list-item-avatar>
 				<v-list-item-content>
 					<v-list-item-title>{{personal_name}}</v-list-item-title>
@@ -46,7 +46,7 @@
 
 		<v-layout row wrap justify-center class='mt-10'>
 			<v-flex lg6 md6 xs12>
-				<Dialogs :socket='socket' @start='start' v-if='model == 2' />
+				<Dialogs :loader='loader' :socket='socket' @start='start' v-if='model == 2' />
 				<Search @startDialog='startDialog' v-if='model == 1' />
 				<Profile v-if='model == 0' />
 				<MessagesBox v-if='model == 5' @back='back' :socket='socket' :username='username' />
@@ -61,7 +61,7 @@
 	import Profile from './Profile.vue'  
 	import Search from './Search.vue'
 	import MessagesBox from './MessagesBox.vue'
-
+	import {mapState } from 'vuex'
 	export default {
 		name: 'Main',
 		data(){
@@ -87,6 +87,7 @@
 				],
 				socket: null,
 				username: '',
+				loader: true,
 				model: 2,
 				drawer: true,
 				count: 4
@@ -96,9 +97,10 @@
 			Dialogs, Profile, Search, MessagesBox
 		},
 		computed: {
+			...mapState(["user"]),
 			personal_name() {
 				return localStorage.username
-			}
+			},
 		},
 		methods: {
 			back(model) {
@@ -108,16 +110,16 @@
 				this.username = username
 				this.model = 5
 			},
-			startDialog(data){
+			startDialog(data, username){
 				axios({
 					method: 'post',
 					url: this.$store.state.domain + 'api/room',
 					data : data
 				})
 				.then(() => {
-					this.$store.state.dialogs.push(this.foundUser.username)
+					this.$store.state.dialogs.push(username)
+					this.username = username
 					this.model = 5
-					this.username = this.foundUser.username
 				})
 			},
 			logout(){
@@ -128,21 +130,23 @@
 			}
 		},
 		created(){
-			this.socket = io(this.$store.state.domain)
-			this.socket.on("connect", () => {
+			this.socket = io(this.$store.state.domain, { 
+				query: { 
+					token: localStorage.token 
+				}
+			})
+			this.socket.once("connect", () => {
 				this.socket.emit('initialize', {"username": localStorage.username})
 			})
-			this.socket.on("get_messages", (data) => {
+			this.socket.once("get_messages", (data) => {
+				this.loader = false
 				this.$store.dispatch("RECIEVE_DATA", data)
 			})
-			this.socket.on("new_message", (resp) => {
-				this.$store.state.data[resp.roomname]["message"] = resp
-				this.$store.state.data[resp.roomname]["count"] += 1
-			})
-			if (localStorage.username == ''){
+			
+			if (localStorage.username == undefined){
 				this.$router.push("/login")
 			}
-			else this.$store.commit("retrieveUsername", localStorage.username)
+			else this.$store.commit("createUser", localStorage.username)
 		}
 	}
 </script>

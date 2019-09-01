@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "axios": "^0.19.0",
+    "cloudinary": "^1.14.0",
+    "cloudinary-core": "^2.7.4",
     "core-js": "^2.6.5",
     "express": "^4.15.2",
     "modules": "^0.4.0",

@@ -9,6 +9,7 @@ export default new Vuex.Store({
 		user: {},
 		dialogs: [],
 		data: {},
+		messages: [],
 		domain: 'https://flask-io-chat.herokuapp.com/',
 	  	token: localStorage.token || null
 	},
@@ -19,70 +20,78 @@ export default new Vuex.Store({
 	},
 	mutations: {
 		logOut(state){
-			state.user = {}
-			state.token = null
-			state.data = {}
-			state.dialogs = []
-		},
-		retrieveToken(state, token){
-			state.token = token
+			localStorage.token = undefined
 		},
 		retrieveUsername(state, username) {
 			state.user.name = username
-		},
-		addMessage(state, message){
-			state.messages[message.room_name].push(message)
 		},
 		retrieveData(state, data){
 			state.data = data
 			state.dialogs = Object.keys(data)
 		},
-		// createUser(state, token){
-		// 	axios({
-	  	// 		method: 'get',
-	  	// 		url: 'https://fastapi-chat.herokuapp.com/test',
-	  	// 		headers: {
-	  	// 			'Authorization': 'Bearer ' + localStorage.token
-	  	// 		}
-	  	// 	})
-	  	// 	.then((resp) => {	
-	  	// 		state.user = {
-	  	// 			rooms: resp.data.group_list,
-	  	// 			name: resp.data.username,
-	  	// 			email: resp.data.email
-	  	// 		}
-	  	// 		localStorage.username = resp.data.username
-	  	// 		let dia = []
-		// 		state.user.rooms.forEach((el, i) => {
-		// 			dia[i] = [el]
-		// 		})
-		// 		dia.forEach((el,i) => {
-		// 			let element = el[0].split("_")
-		// 			if (element[0] == state.user.name) dia[i].push(element[1])
-		// 			else dia[i].push(element[0])
-		// 		})
-		// 		state.dialogs = dia
-	  	// 	})
-		// }
+		getMessages(state, messages){
+			state.messages = messages
+		},
+		newMessage(state, message){
+			state.messages.push(message)
+		},
+		createUser(state, token){
+			axios({
+	  			method: 'get',
+				  url: state.domain + 'api/user/' + localStorage.username,
+				  headers: {
+					  'Authorization': 'Bearer ' + token
+				  }
+	  		})
+	  		.then((resp) => {
+	  			state.user = {
+					name: resp.data.username,
+					email: resp.data.email,
+					img_url: resp.data.photo_url
+	  			}
+	  		})
+		}
 	},
 	actions: {
-		// retrieveToken(context, credentials) {
-		// 	return new Promise((resolve, reject) => {
-		// 		axios.post('https://fastapi-chat.herokuapp.com/token', credentials, {
-		// 			"Authorization": "Basic",
-		// 			"Content-Type": 'application/x-www-form-urlencoded'
-		// 		})
-		// 		.then( (response) => {
-		// 			localStorage.token = response.data.access_token
-		// 			context.commit('retrieveToken', response.data.access_token)
-		// 			context.commit('createUser', response.data.access_token)
-		// 			resolve(response)
-		// 		})
-		// 		.catch((error) => {
-		// 			reject(error)
-		// 		})
-		// 	})
-		// },
+		
+		SIGN_UP(context, credentials, url) {
+			let new_creds = credentials
+			new_creds["photo_url"] = url
+			return new Promise((resolve, reject) => {
+					axios({
+						method: 'post',
+						url: context.state.domain + 'api/user',
+						data: new_creds,
+					})
+					.then( (response) => {
+						localStorage.username = credentials["username"],
+						resolve(credentials)
+						localStorage.token = response.data.token
+						context.commit('createUser', response.data.token)
+					})
+					.catch((error) => {
+						reject(error)
+					})
+				
+			})
+				
+		},
+		LOG_IN(context, credentials){
+			return new Promise((resolve, reject) => {
+				axios({
+					method: 'post',
+					url: context.state.domain + 'api/login', 
+					data: credentials,
+				})
+				.then((response) => {
+					
+					resolve(credentials)
+					localStorage.username = credentials["username"],
+					localStorage.token = response.data.token
+					context.commit('createUser', response.data.token)
+				})
+			})
+		},
 		RECIEVE_DATA(context, data){
 			context.commit("retrieveData", data)
 		},
