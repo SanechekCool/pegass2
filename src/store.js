@@ -29,13 +29,17 @@ export default new Vuex.Store({
 			state.data = data
 			state.dialogs = Object.keys(data)
 		},
+		newDialog(state, roomname){
+			state.dialogs.push(roomname)
+		},
 		getMessages(state, messages){
 			state.messages = messages
 		},
 		newMessage(state, message){
 			state.messages.push(message)
-			state.data[message.roomname]["message"]["text"] = message.text
-			state.data[message.roomname]["count"] += 1 
+			state.data[message.roomname]["message"] = message
+			if (message.username != state.user.name) state.data[message.roomname]["count"] += 1 
+			
 		},
 		createUser(state, token){
 			axios({
@@ -56,14 +60,12 @@ export default new Vuex.Store({
 	},
 	actions: {
 		
-		SIGN_UP(context, credentials, url) {
-			let new_creds = credentials
-			new_creds["photo_url"] = url
+		SIGN_UP(context, credentials) {
 			return new Promise((resolve, reject) => {
 					axios({
 						method: 'post',
 						url: context.state.domain + 'api/user',
-						data: new_creds,
+						data: credentials,
 					})
 					.then( (response) => {
 						localStorage.username = credentials["username"],
@@ -91,6 +93,9 @@ export default new Vuex.Store({
 					localStorage.username = credentials["username"],
 					localStorage.token = response.data.token
 					context.commit('createUser', response.data.token)
+				})
+				.catch((err) => {
+					reject(err)
 				})
 			})
 		},

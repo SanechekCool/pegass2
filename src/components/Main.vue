@@ -46,10 +46,10 @@
 
 		<v-layout row wrap justify-center class='mt-10'>
 			<v-flex lg6 md6 xs12>
-				<Dialogs :loader='loader' :socket='socket' @start='start' v-if='model == 2' />
-				<Search @startDialog='startDialog' v-if='model == 1' />
+				<Dialogs :loader='loader' :socket='socket' @start='start' @loader_off='loaderOff' v-if='model == 2' />
+				<Friends @startDialog='startDialog' v-if='model == 1' />
 				<Profile v-if='model == 0' />
-				<MessagesBox v-if='model == 5' @back='back' :socket='socket' :username='username' />
+				<MessagesBox v-if='model == 5' @back='back' :socket='socket' :username='username' :new_chat='new_chat' />
 			</v-flex>
 		</v-layout>
 	</v-app>
@@ -59,7 +59,7 @@
 	import axios from 'axios'
 	import Dialogs from './Dialogs.vue'
 	import Profile from './Profile.vue'  
-	import Search from './Search.vue'
+	import Friends from './Friends.vue'
 	import MessagesBox from './MessagesBox.vue'
 	import {mapState } from 'vuex'
 	export default {
@@ -87,6 +87,7 @@
 				],
 				socket: null,
 				username: '',
+				new_chat: false,
 				loader: true,
 				model: 2,
 				drawer: true,
@@ -94,7 +95,7 @@
 			}
 		},
 		components: {
-			Dialogs, Profile, Search, MessagesBox
+			Dialogs, Profile, Friends, MessagesBox
 		},
 		computed: {
 			...mapState(["user"]),
@@ -107,11 +108,15 @@
 			},
 		},
 		methods: {
+			loaderOff(bool) {
+				this.loader = bool
+			},
 			back(model) {
 				this.model = model
 			},
 			start(username){
 				this.username = username
+				this.new_chat = false
 				this.model = 5
 			},
 			startDialog(data, username){
@@ -121,8 +126,9 @@
 					data : data
 				})
 				.then(() => {
-					this.$store.state.dialogs.push(username)
+					this.$store.commit("newDialog", data["name"])
 					this.username = username
+					this.new_chat = true
 					this.model = 5
 				})
 			},

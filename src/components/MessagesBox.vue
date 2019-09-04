@@ -21,7 +21,7 @@
 		id='scroll-target'
 		>
 			<div v-if='loading' id='cont_anim' class='d-flex justify-center '>
-					<img id='animation' src="./assets/logo1x.svg" alt="">
+					<img id='animation' src="./assets/logo/logo1x.svg" alt="">
 			</div>
 			<div v-else  >
 				<Message v-for='(item, i) in messages' :key='i' 
@@ -49,7 +49,7 @@
 
 	export default {
 		name: 'MessagesBox',
-		props: ['username', "socket"],
+		props: ['username', "socket", "new_chat"],
 		data(){
 			return {
 				color: "#5C6BC0",
@@ -107,12 +107,17 @@
 			})
 		},
 		created(){
-			this.socket.emit("view", {"username": localStorage.username, "room": this.current_room})
-			this.$store.state.data[this.current_room]["count"] = 0
-			this.socket.once("room_messages", (response) => {
-				this.$store.commit("getMessages", response)
+			if (!this.new_chat) {
+				this.socket.emit("view", {"username": localStorage.username, "room": this.current_room})
+				this.$store.state.data[this.current_room]["count"] = 0
+				this.socket.once("room_messages", (response) => {
+					this.$store.commit("getMessages", response)
+					this.loading = false
+				})
+			}
+			else {
 				this.loading = false
-			})
+			}
 			
 		},
 		watch: {

@@ -17,15 +17,16 @@
 					></v-text-field>
 				</v-flex>
 			<div v-if='loader' id='cont_anim' class='d-flex justify-center '>
-					<img id='animation' src="./assets/logo1x.svg" alt="">
+					<img id='animation' src="./assets/logo/logo1x.svg" alt="">
 			</div>
 			<div v-if='show' class='d-flex justify-center flex-column'>
 				<h2>Упс! Кажется, что-то пошло не так. Пожалуйста, обновите страницу.</h2><br>
+				
 				<img class='align-self-center' src="https://kirovzemlya.ru/wp-content/uploads/2017/04/ios7-sad-icon.png" style='width: 200px; height: 200px;' alt="">
 			</div>
 			<div v-else>
 				<v-flex xs12 v-for='(item, i) in current_dialogs' :key='i'  >
-					<div id='card' class='d-flex justify-space-between' @click='start(data[item]["users"][0])'>
+					<div id='card' :class='{active: data[item]["count"] > 0}' class='d-flex justify-space-between' @click='start(data[item]["users"][0])'>
 						<div class="d-inline-flex">
 							<v-avatar size="55" :tile='false' class='mt-2 ml-3'>
 								<img src="https://avatars.mds.yandex.net/get-pdb/1530302/8676c879-8108-44d4-8009-736ac8e067bb/s1200?webp=false" >
@@ -52,6 +53,7 @@
 					<div class='ml-12'>
 						<v-divider class='ml-9' id='divider'></v-divider>
 					</div>
+	
 					
 				</v-flex>
 			</div>
@@ -86,7 +88,6 @@
 			</v-dialog>
 		</div>
 	</v-card>
-			
 </template>
 
 <script>
@@ -164,9 +165,10 @@ import { setTimeout } from 'timers';
 		created() {
 			setTimeout(() => {
 				if (this.loader == true) {
+					this.$emit("loader_off", false)
 					this.show = true
 				}
-			}, 3000)
+			}, 15000)
 		}
 	}
 </script>
@@ -174,9 +176,9 @@ import { setTimeout } from 'timers';
 <style>
 	
 	#animation {
-		height: 100px;
-		width: 100px;
-		animation: rotation 1s infinite alternate;
+		height: 90px;
+		width: 90px;
+		animation: rotation .75s infinite alternate;
 	}
 	#card{
 		height: 70px;
@@ -185,7 +187,9 @@ import { setTimeout } from 'timers';
 		cursor: pointer;
 		background-color: #E8EAF6;
 	}
-	
+	.active {
+		background-color: #E8EAF6;
+	}
 	
 	@keyframes rotation {
 		0% {

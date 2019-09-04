@@ -29,7 +29,7 @@
 			</v-flex>
             <v-overlay :value="overlay">
 				<div id='cont_anim' class='d-flex justify-center '>
-					<img id='animation' src="./assets/logo1x.svg" alt="">
+					<img id='animation' src="./assets/logo/logo1x.svg" alt="">
 				</div>
 			</v-overlay>
 		</div>
@@ -74,7 +74,9 @@
                 }
                 axios.post('https://api.cloudinary.com/v1_1/dfj4kyerl/image/upload', formData)
 				.then((resp) => {
-                    this.$store.dispatch("SIGN_UP", data, resp.data.secure_url)
+                    let url = resp.data.secure_url
+                    data["photo_url"] = url
+                    this.$store.dispatch("SIGN_UP", data)
                     .then(() => {
                         this.$router.push("/")
                     })

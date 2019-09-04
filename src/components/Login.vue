@@ -20,7 +20,7 @@
 			</v-flex>
 			<v-overlay :value="overlay">
 				<div id='cont_anim' class='d-flex justify-center '>
-					<img id='animation' src="./assets/logo1x.svg" alt="">
+					<img id='animation' src="./assets/logo/logo1x.svg" alt="">
 				</div>
 			</v-overlay>
 		</div>

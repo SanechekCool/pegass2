@@ -34,7 +34,7 @@
 <script>
     import axios from 'axios'
     export default {
-        name: 'Search',
+        name: 'Friends',
         data(){
             return {
                 color: "#5C6BC0",
