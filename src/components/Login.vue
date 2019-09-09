@@ -54,7 +54,11 @@
 				
 			}
 		},	
-		
+		created(){
+			if (localStorage.token != undefined) {
+				this.$router.push("/")
+			}
+		}
 	}
 </script>
 

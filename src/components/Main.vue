@@ -1,8 +1,10 @@
 <template>
 	<v-app>
+		<Toolbar @changeDrawer='changeDrawer' :color='color' :drawer="drawer" app />
 		<v-navigation-drawer
 			v-model="drawer"
-			absolute
+			app
+			temporary
 			bottom
     	>
 			 <v-list-item>
@@ -18,7 +20,7 @@
 
 			<v-list dense>
 				<v-list-item-group v-model="model" :color="color">
-					<v-list-item v-for="(item, i) in items" :key='i'>
+					<v-list-item v-for="(item, i) in items" :key='i' >
 						<v-list-item-icon>
 							<v-icon v-text="item.icon"></v-icon>
 						</v-list-item-icon>
@@ -34,6 +36,9 @@
 				<v-list dense>
 					<v-list-item-group>
 						<v-list-item>
+							<v-list-item-icon>
+								<v-icon v-text="'mdi-exit-to-app'"></v-icon>
+							</v-list-item-icon>
 							<v-list-item-content>
 								<v-list-item-title @click='logout'>Выйти</v-list-item-title>
 							</v-list-item-content>
@@ -44,12 +49,12 @@
 		 </v-navigation-drawer>
 
 
-		<v-layout row wrap justify-center class='mt-10'>
+		<v-layout row wrap justify-center class='mt-2 mx-0'>
 			<v-flex lg6 md6 xs12>
 				<Dialogs :loader='loader' :socket='socket' @start='start' @loader_off='loaderOff' v-if='model == 2' />
 				<Friends @startDialog='startDialog' v-if='model == 1' />
 				<Profile v-if='model == 0' />
-				<MessagesBox v-if='model == 5' @back='back' :socket='socket' :username='username' :new_chat='new_chat' />
+				<MessagesBox v-if='model == 5' @back='back' :socket='socket' :username='username' :new_chat='new_chat'  />
 			</v-flex>
 		</v-layout>
 	</v-app>
@@ -61,6 +66,7 @@
 	import Profile from './Profile.vue'  
 	import Friends from './Friends.vue'
 	import MessagesBox from './MessagesBox.vue'
+	import Toolbar from './Toolbar.vue'
 	import {mapState } from 'vuex'
 	export default {
 		name: 'Main',
@@ -90,12 +96,12 @@
 				new_chat: false,
 				loader: true,
 				model: 2,
-				drawer: true,
+				drawer: false,
 				count: 4
 			}
 		},
 		components: {
-			Dialogs, Profile, Friends, MessagesBox
+			Dialogs, Profile, Friends, MessagesBox, Toolbar
 		},
 		computed: {
 			...mapState(["user"]),
@@ -108,6 +114,9 @@
 			},
 		},
 		methods: {
+			changeDrawer(bool){
+				this.drawer = bool
+			},
 			loaderOff(bool) {
 				this.loader = bool
 			},
@@ -140,7 +149,8 @@
 			}
 		},
 		created(){
-			this.socket = io(this.$store.state.domain, { 
+			this.socket = io(this.$store.state.domain, {
+				'force new connection': true, 
 				query: { 
 					token: localStorage.token 
 				}
@@ -148,6 +158,7 @@
 			this.socket.on("connect", () => {
 				this.socket.emit('initialize', {"username": localStorage.username})
 			})
+			
 			this.socket.on("get_messages", (data) => {
 				this.loader = false
 				this.$store.dispatch("RECIEVE_DATA", data)
@@ -160,6 +171,11 @@
 				this.$router.push("/login")
 			}
 			else this.$store.commit("createUser", localStorage.username)
+		},
+		watch: {
+			model(){
+				this.drawer = false
+			}
 		}
 	}
 </script>

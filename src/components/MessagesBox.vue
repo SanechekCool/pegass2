@@ -35,7 +35,7 @@
 				<v-btn @click='scroll' class='ml-2'>Вниз</v-btn>
 			</div>
 		</v-card>
-		<MessageField :username='username' :socket='socket' />
+		<MessageField :username='username' :socket='socket' :color='color' />
 		
 	</div>
 </template>

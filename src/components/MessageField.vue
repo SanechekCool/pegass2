@@ -18,7 +18,7 @@
                     class="d-flex child-flex"
                     cols="4"
                     >
-                        <v-card flat tile class="d-flex" @click='appendSticker(item)'>
+                        <v-card flat tile class="d-flex" @click='appendEmojy(item)'>
                             <h1>{{item}}</h1>
                         </v-card>
                     </v-col>
@@ -29,12 +29,12 @@
         class='pt-4 px-2'
         label='Напишите сообщение' 
         solo
-        color='#000'
+        color='rgba(0, 0, 0, 0.54)'
         v-model='message'
         autofocus
         @keyup.enter='sendMessage' 
         :append-outer-icon="'mdi-send'"
-        :append-icon="'mdi-face'"
+        :append-icon="'mdi-emoticon'"
         @click:append="show"
         @click:append-outer="sendMessage"></v-text-field>
     </div>
@@ -51,7 +51,7 @@
                 y:0,
                 menu: false,
                 emojies: [`\u{1F602}`, "\u{1F60D}", "\u{1F606}", "\u{1F609}", "\u{1F60F}", "\u{1F618}", "\u{1F621}", "\u{1F624}", "\u{1F630}", "\u{1F60E}", "\u{1F496}",
-                "\u{1F4A9}", "\u{1F62C}"],
+                "\u{1F4A9}", "\u{1F62C}", "\u{1F61E}", "\u{1F62D}", "\u{1F37A}", "\u{1F37B}", "\u{1F631}"],
                 items: [
                     { src: './assets/stickers/1.png', i: 0 },
                     { src: './assets/stickers/2.png', i: 1 },
@@ -79,7 +79,7 @@
                     this.menu = true
                 })
             },
-            appendSticker(item){
+            appendEmojy(item){
                 this.message += item
             }
         }

@@ -1,6 +1,6 @@
 <template>
-    <div class='d-flex flex-column mx-2' @click='deleteMessage(id, i)'>
-        <div class='mes' :class='{owner}'>
+    <div class='d-flex flex-column mx-2' >
+        <div class='mes' :class='{owner}' @click='deleteMessage(id, i)'>
             <v-avatar v-if='!owner' :size='30'><img src="https://avatars.mds.yandex.net/get-pdb/1530302/8676c879-8108-44d4-8009-736ac8e067bb/s1200?webp=false" alt=""></v-avatar>
             <h4 class='ml-2'>{{text}}</h4>
             <small class='pt-5 pl-2'>{{time(timestamp)}}</small>
