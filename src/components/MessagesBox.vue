@@ -1,5 +1,24 @@
 <template>
 	<div>
+		<v-dialog
+        v-model="dialog"
+        max-width="290"
+        >
+            <v-card>
+                <v-card-title class="headline">Нельзя удалять чужие сообщения!</v-card-title>
+                <v-btn
+                    :color="color"
+                    text="text"
+                    @click="dialog = false"
+					class='mb-2'
+                >
+                    Закрыть
+                </v-btn>
+            </v-card>
+        </v-dialog>
+
+
+
 		<v-card class='d-flex justify-space-between' height='62' color='#BDBDBD' dark>
 			<v-btn text large @click='back' class='mt-2'>
 				<v-icon>
@@ -8,11 +27,11 @@
 				Чаты
 			</v-btn>
 			<div class='d-flex flex-column mr-5 mt-1'>
-				<h2>{{username}}</h2>
-				<small style='color: #5C6BC0'>online</small>
+				<h2>{{friend.username}}</h2>
+				<small style='color: #5C6BC0'>Был в сети {{time(friend.last_seen)}}</small>
 			</div>
-			<v-avatar :size="53" :tile='true' class='mt-1 mr-1'>
-				<img src="https://avatars.mds.yandex.net/get-pdb/1530302/8676c879-8108-44d4-8009-736ac8e067bb/s1200?webp=false" alt="">
+			<v-avatar  class='mt-1 mr-1'>
+				<img :src="friend.photo_url" alt="">
 			</v-avatar>
 		</v-card>
 		<v-card  
@@ -25,17 +44,18 @@
 			</div>
 			<div v-else  >
 				<Message v-for='(item, i) in messages' :key='i' 
-				  :i='i' :id='item.id'
+				  :i='i' :id='item.id' :src='friend.photo_url'
 				  :timestamp='item.time' :text='item.text' 
 				  :owner="item.username === personal_name" :color='color'
-				  @deleteMessage='deleteMessage' 
+				  @deleteMessage='deleteMessage'
+				  @deleteAlert='deleteAlert' 
 				/>
 			</div>
 			<div v-if='flag' id='scrollBot'>
 				<v-btn @click='scroll' class='ml-2'>Вниз</v-btn>
 			</div>
 		</v-card>
-		<MessageField :username='username' :socket='socket' :color='color' />
+		<MessageField :username='friend.username' :socket='socket' :color='color' />
 		
 	</div>
 </template>
@@ -49,13 +69,14 @@
 
 	export default {
 		name: 'MessagesBox',
-		props: ['username', "socket", "new_chat"],
+		props: ['friend', "socket", "new_chat"],
 		data(){
 			return {
 				color: "#5C6BC0",
 				message: '',
 				loading: true,
 				flag: false,
+				dialog: false,
 				show: false,
 			}
 		},
@@ -64,7 +85,7 @@
 			...mapState(["user"]),
 			...mapState(["messages"]),
 			current_room(){
-				let names = [this.username, this.personal_name]
+				let names = [this.friend.username, this.personal_name]
 				return names.sort().join("_")
 			},
 			personal_name(){
@@ -76,6 +97,9 @@
 		methods:{
 			back(){
 				this.$emit("back", 2)
+			},
+			deleteAlert(){
+				this.dialog = true
 			},
 			deleteMessage(id, i){
 				axios({
@@ -95,7 +119,17 @@
 				container.scrollTop = container.scrollHeight
 				
 			},
-			
+			time(date){
+				let options = {
+					month: 'long',
+					day: 'numeric',
+					hour: 'numeric',
+					minute: 'numeric',
+				}
+				
+				let m_date = new Date(Date.parse(date + 'Z'))
+				 return m_date.toLocaleString('ru', options)
+			},
 		},
 		mounted(){
 			const container = document.querySelector("#scroll-target")

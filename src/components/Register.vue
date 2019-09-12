@@ -62,20 +62,34 @@
                 this.file = e.target.files[0]
             },
             register(){
-                this.overlay = true
-                const formData = new FormData()
-                formData.append('file', this.file)
-                formData.append('upload_preset', this.cloudinary.uploadPreset)
                 let data = {
                     "username": this.username,
                     "email": this.email,
                     "password": this.password,
                     "photo_url": "https://avatars.mds.yandex.net/get-pdb/1530302/8676c879-8108-44d4-8009-736ac8e067bb/s1200?webp=false"
                 }
-                axios.post('https://api.cloudinary.com/v1_1/dfj4kyerl/image/upload', formData)
-				.then((resp) => {
-                    let url = resp.data.secure_url
-                    data["photo_url"] = url
+                if (this.file) {
+                    this.overlay = true
+                    const formData = new FormData()
+                    formData.append('file', this.file)
+                    formData.append('upload_preset', this.cloudinary.uploadPreset)
+                    axios.post('https://api.cloudinary.com/v1_1/dfj4kyerl/image/upload', formData)
+                    .then((resp) => {
+                        let url = resp.data.secure_url
+                        data["photo_url"] = url
+                        this.$store.dispatch("SIGN_UP", data)
+                        .then(() => {
+                            this.$router.push("/")
+                        })
+                        .catch((error) => {
+                            this.overlay = false
+                        })
+                    })
+                    .catch((err) => {
+                        this.overlay = false
+                    })
+                }
+                else {
                     this.$store.dispatch("SIGN_UP", data)
                     .then(() => {
                         this.$router.push("/")
@@ -83,10 +97,8 @@
                     .catch((error) => {
                         this.overlay = false
                     })
-                })
-                .catch((err) => {
-                    this.overlay = false
-                })
+                }
+                
                 
             }
         }

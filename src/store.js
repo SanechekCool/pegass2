@@ -20,10 +20,13 @@ export default new Vuex.Store({
 	},
 	mutations: {
 		logOut(state){
-			localStorage.token = undefined
+			localStorage.removeItem("token")
 		},
 		retrieveUsername(state, username) {
 			state.user.name = username
+		},
+		addFriend(state, data){
+			state.user.friends.push(data)
 		},
 		retrieveData(state, data){
 			state.data = data
@@ -53,7 +56,8 @@ export default new Vuex.Store({
 	  			state.user = {
 					name: resp.data.username,
 					email: resp.data.email,
-					img_url: resp.data.photo_url
+					img_url: resp.data.photo_url,
+					friends: resp.data.friends
 	  			}
 	  		})
 		}
@@ -69,9 +73,9 @@ export default new Vuex.Store({
 					})
 					.then( (response) => {
 						localStorage.username = credentials["username"],
-						resolve(credentials)
 						localStorage.token = response.data.token
 						context.commit('createUser', response.data.token)
+						resolve(credentials)
 					})
 					.catch((error) => {
 						reject(error)
@@ -88,11 +92,10 @@ export default new Vuex.Store({
 					data: credentials,
 				})
 				.then((response) => {
-					
-					resolve(credentials)
 					localStorage.username = credentials["username"],
 					localStorage.token = response.data.token
 					context.commit('createUser', response.data.token)
+					resolve(credentials)
 				})
 				.catch((err) => {
 					reject(err)

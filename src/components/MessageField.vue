@@ -25,18 +25,23 @@
                 </v-row>
             </v-card>
         </v-menu>
-        <v-text-field
+        <v-textarea
+        label='Напишите сообщение'
+        auto-grow
+        filled
+        rows="1"
+        row-height="15"
         class='pt-4 px-2'
-        label='Напишите сообщение' 
-        solo
         color='rgba(0, 0, 0, 0.54)'
+        background-color='#fff'
         v-model='message'
         autofocus
         @keyup.enter='sendMessage' 
         :append-outer-icon="'mdi-send'"
         :append-icon="'mdi-emoticon'"
         @click:append="show"
-        @click:append-outer="sendMessage"></v-text-field>
+        @click:append-outer="sendMessage"
+        ></v-textarea>
     </div>
 </template>
 

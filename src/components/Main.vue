@@ -9,10 +9,11 @@
     	>
 			 <v-list-item>
 				<v-list-item-avatar>
-					<!-- <v-img :src="user.img_url"></v-img> -->
+					<v-img :src="user.img_url"></v-img>
 				</v-list-item-avatar>
 				<v-list-item-content>
-					<v-list-item-title>{{personal_name}}</v-list-item-title>
+					<v-list-item-title>{{personal_name}}</v-list-item-title><br>
+					<small class='mt-1' style='color:#5C6BC0; font-size: 12px;'>В сети</small>
 				</v-list-item-content>
 			</v-list-item>
 
@@ -34,13 +35,13 @@
 
 			<template v-slot:append>
 				<v-list dense>
-					<v-list-item-group>
-						<v-list-item>
+					<v-list-item-group >
+						<v-list-item @click='logout'> 
 							<v-list-item-icon>
 								<v-icon v-text="'mdi-exit-to-app'"></v-icon>
 							</v-list-item-icon>
 							<v-list-item-content>
-								<v-list-item-title @click='logout'>Выйти</v-list-item-title>
+								<v-list-item-title >Выйти</v-list-item-title>
 							</v-list-item-content>
 						</v-list-item>
 					</v-list-item-group>
@@ -49,12 +50,12 @@
 		 </v-navigation-drawer>
 
 
-		<v-layout row wrap justify-center class='mt-2 mx-0'>
+		<v-layout row wrap justify-center class=' mx-0' id='layout'>
 			<v-flex lg6 md6 xs12>
-				<Dialogs :loader='loader' :socket='socket' @start='start' @loader_off='loaderOff' v-if='model == 2' />
-				<Friends @startDialog='startDialog' v-if='model == 1' />
+				<Dialogs :loader='loader' :socket='socket' @start='start' @loader_off='loaderOff' v-if='model == 2' class='pr-1'  />
+				<Friends @startDialog='startDialog'   v-if='model == 1' />
 				<Profile v-if='model == 0' />
-				<MessagesBox v-if='model == 5' @back='back' :socket='socket' :username='username' :new_chat='new_chat'  />
+				<MessagesBox v-if='model == 5' @back='back' :socket='socket' :friend='friend' :new_chat='new_chat'  />
 			</v-flex>
 		</v-layout>
 	</v-app>
@@ -68,6 +69,7 @@
 	import MessagesBox from './MessagesBox.vue'
 	import Toolbar from './Toolbar.vue'
 	import {mapState } from 'vuex'
+
 	export default {
 		name: 'Main',
 		data(){
@@ -92,7 +94,7 @@
 					}
 				],
 				socket: null,
-				username: '',
+				friend: {},
 				new_chat: false,
 				loader: true,
 				model: 2,
@@ -104,6 +106,8 @@
 			Dialogs, Profile, Friends, MessagesBox, Toolbar
 		},
 		computed: {
+			...mapState(["user"]),
+			...mapState(["dialogs"]),
 			...mapState(["user"]),
 			personal_name() {
 				return localStorage.username
@@ -123,12 +127,19 @@
 			back(model) {
 				this.model = model
 			},
+			
 			start(username){
-				this.username = username
+				this.user.friends.forEach(el => {
+					if (username == el.username) this.friend = el
+				})
 				this.new_chat = false
 				this.model = 5
 			},
-			startDialog(data, username){
+			startDialog(data, user){
+				if (this.dialogs.some((a) => a == data.name)) this.start(user.username)
+				else this.createRoom(data, user)
+			},
+			createRoom(data, user){
 				axios({
 					method: 'post',
 					url: this.$store.state.domain + 'api/room',
@@ -136,7 +147,7 @@
 				})
 				.then(() => {
 					this.$store.commit("newDialog", data["name"])
-					this.username = username
+					this.friend = user
 					this.new_chat = true
 					this.model = 5
 				})
@@ -144,6 +155,8 @@
 			logout(){
 				this.$store.dispatch("LOGOUT")
 				.then(() => {
+					this.socket.disconnect()
+					this.socket.emit('update_last_seen', localStorage.username)
 					this.$router.push("/login")
 				})
 			}
@@ -158,7 +171,12 @@
 			this.socket.on("connect", () => {
 				this.socket.emit('initialize', {"username": localStorage.username})
 			})
-			
+
+			this.socket.on("disconnect", () => {
+				this.socket.emit('update_last_seen', localStorage.username)
+				this.$store.commit("logOut")
+			})
+
 			this.socket.on("get_messages", (data) => {
 				this.loader = false
 				this.$store.dispatch("RECIEVE_DATA", data)
@@ -167,7 +185,7 @@
 				this.$store.commit("newMessage", resp)
 				
 			})
-			if (localStorage.username == undefined){
+			if (localStorage.token == undefined){
 				this.$router.push("/login")
 			}
 			else this.$store.commit("createUser", localStorage.username)
@@ -181,4 +199,12 @@
 </script>
 
 <style>
+	#layout {
+		margin-top: 20px;
+	}
+	@media screen and (max-width: 960px) {
+		#layout {
+			margin-top: 0;
+		}
+	}
 </style>

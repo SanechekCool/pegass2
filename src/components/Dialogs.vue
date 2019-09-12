@@ -33,9 +33,9 @@
 							</v-avatar>
 							<div class='d-flex flex-column ml-4 mt-1'>
 								<h3 class='font-weight-thick align-self-start'>{{data[item]["users"][0]}}</h3>
-								<div class='d-inline-flex justify-start'>
+								<div class='d-inline-flex justify-start text-wrap'>
 									<h4 v-if='data[item]["message"]["username"] == personal_name' class='font-weight-bold mt-1'>Вы:&nbsp;</h4>
-									<h4 v-if='data' class='font-weight-thin mt-1'>{{data[item]["message"]["text"]}}</h4>
+									<h4 v-if='data' id='h1' class='font-weight-thin mt-1'>{{data[item]["message"]["text"]}}</h4>
 								</div>
 								
 							</div>
@@ -62,29 +62,29 @@
 			v-model="dialog"
 			max-width="290"
 			>
-			<v-card>
-				<v-card-title class="headline">Вы уверены, что хотите удалить историю сообщений?</v-card-title>
-				<v-card-text>
-					Данное действие невозможно будет отменить
-				</v-card-text>
-				<v-card-actions>
-				<v-spacer></v-spacer>
-				<v-btn
-					color="error"
-					text="text"
-					@click="dialog = false"
-				>
-					Нет
-				</v-btn>
-				<v-btn
-					:color="color"
-					text="text"
-					@click="deleteRoom(item[0])"
-				>
-					Да
-				</v-btn>
-				</v-card-actions>
-			</v-card>
+				<v-card>
+					<v-card-title class="headline">Вы уверены, что хотите удалить историю сообщений?</v-card-title>
+					<v-card-text>
+						Данное действие невозможно будет отменить
+					</v-card-text>
+					<v-card-actions>
+					<v-spacer></v-spacer>
+					<v-btn
+						color="error"
+						text="text"
+						@click="stopDeleting"
+					>
+						Нет
+					</v-btn>
+					<v-btn
+						:color="color"
+						text="text"
+						@click="deleteRoom(item[0])"
+					>
+						Да
+					</v-btn>
+					</v-card-actions>
+				</v-card>
 			</v-dialog>
 		</div>
 	</v-card>
@@ -131,6 +131,10 @@ import { setTimeout } from 'timers';
 			}
 		},
 		methods: {
+			stopDeleting(){
+				this.dialog = false
+				this.delete = false
+			},
 			time(date){
 				let options_today = {
 					hour: 'numeric',
@@ -174,7 +178,16 @@ import { setTimeout } from 'timers';
 </script>
 
 <style>
-	
+	#scroll {
+		height: 100%;
+	}
+	#h1 {
+		width: 300px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		text-align: left;
+	}
 	#animation {
 		height: 90px;
 		width: 90px;
@@ -203,6 +216,13 @@ import { setTimeout } from 'timers';
 	@media screen and (max-width: 1265px) {
 		#divider{
 			margin-left: 108px;
+		}
+		
+	}
+	@media screen and (max-width: 530px){
+		#h1 {
+			width: 100px;
+			
 		}
 	}
 </style>
