@@ -46,9 +46,11 @@
 </template>
 
 <script>
+    import {firestore} from '../firebase.js'
+    
     export default {
         name: 'MessageField',
-        props: ["username", "socket"],
+        props: ["friend",  "user", "roomName"],
         data(){
             return {
                 message: '',
@@ -64,22 +66,60 @@
                 ],
             }
         },
-        computed: {
-            current_room(){
-				let names = [this.username, localStorage.username]
-				return names.sort().join("_")
-			},
-        },
+       
         methods: {
             sendMessage(){
-                this.socket.emit("send_message", {"room": this.current_room, "username": localStorage.username, "text": this.message})
-				this.message = ''
+                
+                firestore.collection("dialogs").doc(this.roomName).collection("messages").add({
+                    text: this.message,
+                    time: new Date(),
+                    user: {
+                        "username": this.user.displayName,
+                    }
+                })
+                .then((docRef) =>{
+                    firestore.collection("users").doc(this.user.uid).collection("dialogs").doc(this.roomName).set({
+                        lastMessage: {
+                            text: this.message,
+                            time: new Date(),
+                            messageId: docRef.id,
+                            user: {
+                                username: this.user.displayName,
+                            }
+                        },
+                        username: this.friend.username,
+                        photoUrl: this.friend.photoUrl || ""
+                    })
+                    let _message = {
+                        lastMessage: {
+                            "text": this.message,
+                            "time": 
+                            {
+                                "seconds": (new Date()).getTime() / 1000,
+                            },
+                            "messageId": docRef.id,
+                            "user": {
+                                "username": this.user.displayName,
+                            }
+                        },
+                        "username": this.friend.username,
+                        "room": this.roomName,
+                        "photoUrl": this.friend.photoUrl || ""
+                    }
+                        
+                    this.$store.commit("newMessage", [this.roomName, _message])
+                    this.message = ''
+                })
+                .catch((error) => {
+                    console.error("Error adding document: ", error)
+                });
+				
             },
             show(e){
                 e.preventDefault();
                 this.showMenu = false
-                this.x = e.clientX
-                this.y = e.clientY
+                this.x = e.clientX - 100
+                this.y = e.clientY - 45
                 this.$nextTick(() => {
                     this.menu = true
                 })

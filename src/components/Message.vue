@@ -13,7 +13,7 @@
                 <v-list-item
                 v-for="(item, index) in items"
                 :key="index"
-                @click='deleteMessage(id, i)'
+                @click='deleteMessage(id)'
                 >
                 <v-list-item-title>{{ item.title }}</v-list-item-title>
                 </v-list-item>
@@ -31,11 +31,11 @@
 <script>
     export default {
         name: 'Message',
-        props: ['id', "src", "text", "owner", "color", "timestamp", "i"],
+        props: ['id', "src", "text", "owner", "color", "timestamp"],
         data(){
             return {
                  items: [
-                    { title: 'Delete' },
+                    { title: 'Удалить' },
                     
                 ],
                 alert: false
@@ -48,11 +48,11 @@
 					minute: 'numeric',
 				}
 				
-				let m_date = new Date(Date.parse(date + 'Z'))
-				return m_date.toLocaleString('ru', options)
+				let m_date = new Date(date.seconds * 1000)
+				return m_date.toLocaleString("ru", options)
 			},
             deleteMessage(id, i){
-                if (this.owner) this.$emit("deleteMessage", id, i)
+                if (this.owner) this.$emit("deleteMessage", id)
 				else this.$emit("deleteAlert")
 			},
         }  

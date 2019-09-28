@@ -1,6 +1,6 @@
 <template>
 	<v-app>
-		<Toolbar @changeDrawer='changeDrawer' :color='color' :drawer="drawer" app />
+		<Toolbar @changeDrawer='changeDrawer' @changeLocation='changeLocation' :color='color' :drawer="drawer" app />
 		<v-navigation-drawer
 			v-model="drawer"
 			app
@@ -9,10 +9,10 @@
     	>
 			 <v-list-item>
 				<v-list-item-avatar>
-					<v-img :src="user.img_url"></v-img>
+					<v-img :src="user.photoURL"></v-img>
 				</v-list-item-avatar>
 				<v-list-item-content>
-					<v-list-item-title>{{personal_name}}</v-list-item-title><br>
+					<v-list-item-title>{{user.displayName}}</v-list-item-title><br>
 					<small class='mt-1' style='color:#5C6BC0; font-size: 12px;'>В сети</small>
 				</v-list-item-content>
 			</v-list-item>
@@ -52,10 +52,10 @@
 
 		<v-layout row wrap justify-center class=' mx-0' id='layout'>
 			<v-flex lg6 md6 xs12>
-				<Dialogs :loader='loader' :socket='socket' @start='start' @loader_off='loaderOff' v-if='model == 2' class='pr-1'  />
+				<Dialogs   @startDialog='startDialog' @loader_off='loaderOff' v-if='model == 2' class='pr-1'  />
 				<Friends @startDialog='startDialog'   v-if='model == 1' />
-				<Profile v-if='model == 0' />
-				<MessagesBox v-if='model == 5' @back='back' :socket='socket' :friend='friend' :new_chat='new_chat'  />
+				<Profile v-if='model == 0' :color='color' @changeLocation='changeLocation' />
+				<MessagesBox v-if='model == 5' @back='back' @messageSent='messageSent' :roomName='roomName' :friend='friend' :new_chat='new_chat'  />
 			</v-flex>
 		</v-layout>
 	</v-app>
@@ -69,6 +69,8 @@
 	import MessagesBox from './MessagesBox.vue'
 	import Toolbar from './Toolbar.vue'
 	import {mapState } from 'vuex'
+	import {auth, firestore} from '../firebase.js'
+
 
 	export default {
 		name: 'Main',
@@ -93,10 +95,9 @@
 						text: 'Настройки'
 					}
 				],
-				socket: null,
 				friend: {},
 				new_chat: false,
-				loader: true,
+				roomName: null,
 				model: 2,
 				drawer: false,
 				count: 4
@@ -107,17 +108,13 @@
 		},
 		computed: {
 			...mapState(["user"]),
-			...mapState(["dialogs"]),
+			...mapState(["data"]),
 			...mapState(["user"]),
-			personal_name() {
-				return localStorage.username
-			},
-			current_room(){
-				let names = [this.username, this.personal_name]
-				return names.sort().join("_")
-			},
 		},
 		methods: {
+			messageSent(bool){
+				this.new_chat = bool
+			},
 			changeDrawer(bool){
 				this.drawer = bool
 			},
@@ -128,67 +125,33 @@
 				this.model = model
 			},
 			
-			start(username){
-				this.user.friends.forEach(el => {
-					if (username == el.username) this.friend = el
-				})
-				this.new_chat = false
+			start(friend, name, bool){
+				this.friend = {
+					"username": friend.username,
+					"photo_url": friend.photoUrl,
+					// "last_seen": friend.last_seen
+				}
+				this.roomName = name
+				this.new_chat = bool
 				this.model = 5
 			},
-			startDialog(data, user){
-				if (this.dialogs.some((a) => a == data.name)) this.start(user.username)
-				else this.createRoom(data, user)
+			startDialog(user){
+				this.new_chat = false
+				let names = user.room
+				let bool = !this.data.some((a) => a.username == user.username)
+
+				this.start(user, names, bool)
 			},
-			createRoom(data, user){
-				axios({
-					method: 'post',
-					url: this.$store.state.domain + 'api/room',
-					data : data
-				})
-				.then(() => {
-					this.$store.commit("newDialog", data["name"])
-					this.friend = user
-					this.new_chat = true
-					this.model = 5
-				})
+			changeLocation(loc){
+				this.model = loc
 			},
+			
 			logout(){
 				this.$store.dispatch("LOGOUT")
 				.then(() => {
-					this.socket.disconnect()
-					this.socket.emit('update_last_seen', localStorage.username)
 					this.$router.push("/login")
 				})
 			}
-		},
-		created(){
-			this.socket = io(this.$store.state.domain, {
-				'force new connection': true, 
-				query: { 
-					token: localStorage.token 
-				}
-			})
-			this.socket.on("connect", () => {
-				this.socket.emit('initialize', {"username": localStorage.username})
-			})
-
-			this.socket.on("disconnect", () => {
-				this.socket.emit('update_last_seen', localStorage.username)
-				this.$store.commit("logOut")
-			})
-
-			this.socket.on("get_messages", (data) => {
-				this.loader = false
-				this.$store.dispatch("RECIEVE_DATA", data)
-			})
-			this.socket.on("new_message", (resp) => {
-				this.$store.commit("newMessage", resp)
-				
-			})
-			if (localStorage.token == undefined){
-				this.$router.push("/login")
-			}
-			else this.$store.commit("createUser", localStorage.username)
 		},
 		watch: {
 			model(){

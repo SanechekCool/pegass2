@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import axios from 'axios'
+import {auth, usersRef, dialogsRef, firestore} from './firebase.js'
 
 Vue.use(Vuex)
 
@@ -8,106 +9,169 @@ export default new Vuex.Store({
 	state: {
 		user: {},
 		dialogs: [],
-		data: {},
+		loader: true,
+		data: [],
 		messages: [],
 		domain: 'https://flask-io-chat.herokuapp.com/',
-	  	token: localStorage.token || null
 	},
 	getters: {
 		loggedIn(state){
-			return localStorage.username != ''
+			return localStorage.uid != ''
 		},
 	},
+	
 	mutations: {
 		logOut(state){
-			localStorage.removeItem("token")
+			usersRef.doc(state.user.uid).update({
+				"last_seen": (new Date()).toString()
+			})
+			localStorage.removeItem("uid")
+			state.data = []
+			auth.signOut()
 		},
 		retrieveUsername(state, username) {
 			state.user.name = username
 		},
-		addFriend(state, data){
-			state.user.friends.push(data)
+		addFriend(state, user){
+			state.user.friends.push(user)
 		},
-		retrieveData(state, data){
-			state.data = data
-			state.dialogs = Object.keys(data)
-		},
+		
 		newDialog(state, roomname){
 			state.dialogs.push(roomname)
 		},
 		getMessages(state, messages){
 			state.messages = messages
 		},
-		newMessage(state, message){
-			state.messages.push(message)
-			state.data[message.roomname]["message"] = message
-			if (message.username != state.user.name) state.data[message.roomname]["count"] += 1 
+		newMessage(state, [room, message]){
+			state.data.forEach((el, i) => {
+				if (el.room == room) {
+					state.data[i] = message
+					return false
+				}
+			})
 			
 		},
-		createUser(state, token){
-			axios({
-	  			method: 'get',
-				  url: state.domain + 'api/user/' + localStorage.username,
-				  headers: {
-					  'Authorization': 'Bearer ' + token
-				  }
-	  		})
-	  		.then((resp) => {
-	  			state.user = {
-					name: resp.data.username,
-					email: resp.data.email,
-					img_url: resp.data.photo_url,
-					friends: resp.data.friends
-	  			}
-	  		})
+		createUser(state, [user, data]){
+			state.data = []
+			state.user = user
+			state.data = data
+			localStorage.email = user.email
+			
+			data.forEach(el => {
+				state.dialogs.push(el.username)
+			})
+			state.loader = false
+			usersRef.doc(user.uid).update({
+				"last_seen": "В сети"
+			})
 		}
 	},
 	actions: {
-		
-		SIGN_UP(context, credentials) {
+		PUBLISH_POST(context, data){
+			usersRef.child(localStorage.uid).child("posts").push(data)
+		},
+		RETRIEVE_CREDENTIALS(context, user){
 			return new Promise((resolve, reject) => {
-					axios({
-						method: 'post',
-						url: context.state.domain + 'api/user',
-						data: credentials,
+				let idsFriends = []
+				let data = []
+				let idsDialogs= []
+				let friends = []
+				let final_user = user
+				let dialogs = []
+
+				//get Data
+				usersRef.doc(auth.currentUser.uid).collection("dialogs").get() 
+				.then((doc) => {
+					doc.docs.forEach((el) => {
+						idsDialogs.push(el.id)
 					})
-					.then( (response) => {
-						localStorage.username = credentials["username"],
-						localStorage.token = response.data.token
-						context.commit('createUser', response.data.token)
-						resolve(credentials)
+					
+					idsDialogs.forEach((elem, i) => {
+						usersRef.doc(auth.currentUser.uid).collection("dialogs").doc(elem)
+						.get()
+						.then((querySnapshot) => {
+							let e = querySnapshot.data()
+							e.room = elem
+							data.push(e)
+						})
+						
 					})
-					.catch((error) => {
-						reject(error)
+				})
+
+				//get Friends
+				usersRef.doc(auth.currentUser.uid).collection("friends").get()
+				.then((document) => {
+					document.docs.forEach((el) => {
+						idsFriends.push(el.id)
 					})
+					idsFriends.forEach((elem, i) => {
+						usersRef.doc(elem).get()
+						.then((querySnapshot) => {
+							friends.push(querySnapshot.data())
+							friends[i].id = elem
+						})
+					})
+				})
+				final_user["friends"] = friends
+				context.commit("createUser", [final_user, data])
+				resolve()
+			})
+		},
+		SIGN_UP(context, data) {
+			return new Promise((resolve, reject) => {
+				auth.createUserWithEmailAndPassword(data.email, data.password)
+				.then((response) => {
+					auth.currentUser.updateProfile({
+						displayName: data.username,
+						  photoURL: data.photo_url,
+						  email: data.email
+					})
+					let real_data = {
+						"username": data.username,
+						"email": data.email,
+						"photo_url": data.photo_url,
+						"last_seen": "В сети"
+					}
+					localStorage.uid = auth.currentUser.uid
+					firestore.runTransaction(function(transaction) {
+						usersRef.doc(auth.currentUser.uid).set(real_data)
+					})
+					.then(() => {
+						resolve()
+					})
+					.catch((err) => {
+						reject(err)
+					})
+				})
+                .catch((error) => {
+					reject(error)
+                })		
 				
 			})
 				
 		},
+		ADD_FRIEND(context, user){
+			usersRef.doc(auth.currentUser.uid).collection("friends").doc(user.id).set({})
+			context.commit("addFriend", user)
+		},
 		LOG_IN(context, credentials){
 			return new Promise((resolve, reject) => {
-				axios({
-					method: 'post',
-					url: context.state.domain + 'api/login', 
-					data: credentials,
-				})
-				.then((response) => {
-					localStorage.username = credentials["username"],
-					localStorage.token = response.data.token
-					context.commit('createUser', response.data.token)
-					resolve(credentials)
+				auth.signInWithEmailAndPassword(credentials.email, credentials.password)
+				.then(() => {
+					
+					resolve()
 				})
 				.catch((err) => {
 					reject(err)
 				})
+				
 			})
 		},
-		RECIEVE_DATA(context, data){
-			context.commit("retrieveData", data)
+		RECIEVE_DATA(context, [dialogs, messages]){
+		
+			
 		},
 		LOGOUT(context){
-			localStorage.token = ''
-			localStorage.username = ''
 			context.commit("logOut")
 		}
 	}	

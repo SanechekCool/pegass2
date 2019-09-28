@@ -19,44 +19,76 @@
 			<div v-if='loader' id='cont_anim' class='d-flex justify-center '>
 					<img id='animation' src="./assets/logo/logo1x.svg" alt="">
 			</div>
+
+			
 			<div v-if='show' class='d-flex justify-center flex-column'>
 				<h2>Упс! Кажется, что-то пошло не так. Пожалуйста, обновите страницу.</h2><br>
-				
 				<img class='align-self-center' src="https://kirovzemlya.ru/wp-content/uploads/2017/04/ios7-sad-icon.png" style='width: 200px; height: 200px;' alt="">
 			</div>
-			<div v-else>
-				<v-flex xs12 v-for='(item, i) in current_dialogs' :key='i'  >
-					<div id='card' :class='{active: data[item]["count"] > 0}' class='d-flex justify-space-between' @click='start(data[item]["users"][0])'>
-						<div class="d-inline-flex">
-							<v-avatar size="55" :tile='false' class='mt-2 ml-3'>
-								<img src="https://avatars.mds.yandex.net/get-pdb/1530302/8676c879-8108-44d4-8009-736ac8e067bb/s1200?webp=false" >
-							</v-avatar>
-							<div class='d-flex flex-column ml-4 mt-1'>
-								<h3 class='font-weight-thick align-self-start'>{{data[item]["users"][0]}}</h3>
-								<div class='d-inline-flex justify-start text-wrap'>
-									<h4 v-if='data[item]["message"]["username"] == personal_name' class='font-weight-bold mt-1'>Вы:&nbsp;</h4>
-									<h4 v-if='data' id='h1' class='font-weight-thin mt-1'>{{data[item]["message"]["text"]}}</h4>
-								</div>
-								
+
+
+			<v-flex xs12 v-for='(item, i) in data' :key='i'  >
+				<div id='card'  class='d-flex justify-space-between' @click='start(item)'>
+					<div class="d-inline-flex">
+						<v-avatar size="55" :tile='false' class='mt-2 ml-3'>
+							<img :src="item.photo_url" >
+						</v-avatar>
+						<div class='d-flex flex-column ml-4 mt-1'>
+							<h3 class='font-weight-thick align-self-start'>{{item.username}}</h3>
+							<div class='d-inline-flex justify-start text-wrap'>
+								<v-avatar v-if='item.lastMessage.user.username == personal_name' size="27" :tile='false' class='mr-2 mt-1'>
+									<img :src="user.photoURL" >
+								</v-avatar>
+								<!-- <h4  class='font-weight-bold mt-1'>Вы:</h4> -->
+								<h4 v-if='data' id='h1' class='font-weight-thin mt-2'>{{item.lastMessage.text}}</h4>
 							</div>
 						</div>
-						<div class='d-inline-flex mt-1 justify-end mr-1' id='box'>
-							<v-badge v-if='data[item]["count"] > 0' left :color="color" small class='mt-8 mr-12'>
-								<span slot="badge" class=''>{{data[item]["count"]}}</span>
-							</v-badge> 
-							<small v-if='data' class='mt-2 mr-3'>{{time(data[item]["message"]["time"])}}</small>
-							<v-btn @click='proceedDelete' text small fab class='mt-3'>
-								<v-icon>close</v-icon>
-							</v-btn>
-						</div>
 					</div>
-					<div class='ml-12'>
-						<v-divider class='ml-9' id='divider'></v-divider>
+					<div class='d-inline-flex mt-1 justify-end mr-1' id='box'>
+						<!-- <v-badge v-if='data[item]["count"] > 0' left :color="color" small class='mt-8 mr-12'>
+							<span slot="badge" class=''>{{data[item]["count"]}}</span>
+						</v-badge>  -->
+						<small v-if='data' class='mt-2 mr-3'>{{time(item.lastMessage.time)}}</small>
+						<v-btn @click='proceedDelete' text small fab class='mt-3'>
+							<v-icon>close</v-icon>
+						</v-btn>
 					</div>
-	
+				</div>
+				<div class='ml-12'>
+					<v-divider class='ml-9' id='divider'></v-divider>
+				</div>
+			</v-flex>
+
+			<!-- Другой вариант -->
+
+			<!-- <v-list v-else subheader >
+				<v-list-item
+				v-for="(item, i) in data"
+				:key="i"
+				@click="start(item)"
+				>
+					<v-list-item-avatar :size='55'>
+						<v-img :src="item.photo_url"></v-img>
+					</v-list-item-avatar>
+
+					<v-list-item-content >
+						<v-list-item-title class='text-left font-weight-bold' v-text="item.username"></v-list-item-title>
+						<p class='text-left pt-2'>{{item.message.text}}</p>
+					</v-list-item-content>
+
+					<v-list-item-icon >
+						<small class='mr-4 mt-3'>{{time(item.message.time)}}</small>
+						<v-btn class='mt-4' text icon @click='proceedDelete'>
+							<v-icon :color="color">close</v-icon>
+						</v-btn>
+					</v-list-item-icon><br>
+					<div class='ml-12' >
+						<v-divider class='ml-12' ></v-divider>
+					</div>
+				</v-list-item> 
+				
+			</v-list> -->
 					
-				</v-flex>
-			</div>
 			
 			<v-dialog
 			v-model="dialog"
@@ -92,10 +124,12 @@
 
 <script>
 	import axios from 'axios'
-import { setTimeout } from 'timers';
+	import { setTimeout } from 'timers'
+	import { mapState } from 'vuex'
+
 	export default {
 		name: 'Dialogs',
-		props: ["socket", "loader"],
+		props: ["socket"],
 		data(){
 			return{
 				text: '',
@@ -110,15 +144,14 @@ import { setTimeout } from 'timers';
 		},
 		
 		computed: {
-			// user(){
-			// 	return this.$store.state.user
-			// },
-			dialogs(){
-				return this.$store.state.dialogs
+			...mapState(["user"]),
+			loader(){
+				return this.$store.state.loader
 			},
+			
 			current_dialogs(){
-				if (this.dialogs)
-					return this.dialogs.filter((a) => a.toLowerCase().indexOf(this.dia_users.toLowerCase()) != -1)
+				if (this.data)
+					return this.data.filter((a) => a.username.toLowerCase().indexOf(this.dia_users.toLowerCase()) != -1)
 			},
 			data(){
 				return this.$store.state.data				
@@ -127,7 +160,7 @@ import { setTimeout } from 'timers';
 			// 	return this.$root.socket
 			// },
 			personal_name(){
-				return localStorage.username
+				return this.$store.state.user.displayName
 			}
 		},
 		methods: {
@@ -136,17 +169,13 @@ import { setTimeout } from 'timers';
 				this.delete = false
 			},
 			time(date){
-				let options_today = {
+				let options = {
 					hour: 'numeric',
 					minute: 'numeric',
 				}
-				let options_past = {
-					month: 'long',
-					day: 'numeric',
-				}
-				let m_date = new Date(Date.parse(date + 'Z'))
-				if (+(new Date().getDate()) > +(m_date.getDate())) return m_date.toLocaleString('ru', options_past)
-				else return m_date.toLocaleString('ru', options_today)
+				
+				let m_date = new Date(date.seconds * 1000)
+				return m_date.toLocaleString("ru", options)
 			},
 			proceedDelete(){
 				this.delete = true
@@ -159,10 +188,9 @@ import { setTimeout } from 'timers';
 					url: "https://fastapi-chat.herokuapp.com/rooms/" + name
 				})
 			},
-			start(username){
-				if (!this.delete) {
-					this.$emit("start", username)
-				}
+			start(user){
+				if (!this.delete) this.$emit("startDialog", user)
+				
 			},
 			
 		},

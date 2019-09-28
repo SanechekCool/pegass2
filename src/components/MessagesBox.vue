@@ -28,7 +28,8 @@
 			</v-btn>
 			<div class='d-flex flex-column mr-5 mt-1'>
 				<h2>{{friend.username}}</h2>
-				<small style='color: #5C6BC0'>Был в сети {{time(friend.last_seen)}}</small>
+				<small v-if='friend.last_seen != "В сети"' style='color: #5C6BC0'>Был в сети {{time(friend.last_seen)}}</small>
+				<small v-else style='color: #5C6BC0'>{{friend.last_seen}}</small>
 			</div>
 			<v-avatar  class='mt-1 mr-1'>
 				<img :src="friend.photo_url" alt="">
@@ -44,9 +45,10 @@
 			</div>
 			<div v-else  >
 				<Message v-for='(item, i) in messages' :key='i' 
-				  :i='i' :id='item.id' :src='friend.photo_url'
+				   :src='friend.photo_url'
+				  :id='item.id'
 				  :timestamp='item.time' :text='item.text' 
-				  :owner="item.username === personal_name" :color='color'
+				  :owner="item.user.username === user.displayName" :color='color'
 				  @deleteMessage='deleteMessage'
 				  @deleteAlert='deleteAlert' 
 				/>
@@ -55,7 +57,7 @@
 				<v-btn @click='scroll' class='ml-2'>Вниз</v-btn>
 			</div>
 		</v-card>
-		<MessageField :username='friend.username' :socket='socket' :color='color' />
+		<MessageField :friend='friend' :roomName='roomName' :user='user'  :color='color' />
 		
 	</div>
 </template>
@@ -66,10 +68,11 @@
 	import { mapState } from 'vuex'
 	import Message from './Message.vue'
 	import MessageField from './MessageField.vue'
+	import {firestore, dialogsRef} from '../firebase.js'
 
 	export default {
 		name: 'MessagesBox',
-		props: ['friend', "socket", "new_chat"],
+		props: ['friend', "new_chat", "roomName"],
 		data(){
 			return {
 				color: "#5C6BC0",
@@ -84,15 +87,10 @@
 		computed: {
 			...mapState(["user"]),
 			...mapState(["messages"]),
-			current_room(){
-				let names = [this.friend.username, this.personal_name]
-				return names.sort().join("_")
-			},
+			
 			personal_name(){
-				return localStorage.username
+				return this.user.displayName
 			},
-			
-			
 		},
 		methods:{
 			back(){
@@ -101,18 +99,8 @@
 			deleteAlert(){
 				this.dialog = true
 			},
-			deleteMessage(id, i){
-				axios({
-					method: 'delete',
-					url: this.$store.state.domain + 'api/message/' + id,
-				})
-				.then((response) => {
-					console.log("Done")
-					if (response.status == 200) {
-						this.messages.splice(i, 1)
-						this.$store.state.data[this.current_room]["message"]["text"] = this.messages[this.messages.length - 1].text
-					}
-				})
+			deleteMessage(id){
+				dialogsRef.doc(this.roomName).collection("messages").doc(id).delete()
 			},
 			scroll(){
 				const container = document.querySelector("#scroll-target")
@@ -127,8 +115,8 @@
 					minute: 'numeric',
 				}
 				
-				let m_date = new Date(Date.parse(date + 'Z'))
-				 return m_date.toLocaleString('ru', options)
+				let m_date = new Date(Date.parse(date))
+				return m_date.toLocaleString('ru', options)
 			},
 		},
 		mounted(){
@@ -141,18 +129,23 @@
 			})
 		},
 		created(){
-			if (!this.new_chat) {
-				this.socket.emit("view", {"username": localStorage.username, "room": this.current_room})
-				this.$store.state.data[this.current_room]["count"] = 0
-				this.socket.once("room_messages", (response) => {
-					this.$store.commit("getMessages", response)
-					this.loading = false
+			if (this.new_chat) {
+				firestore.collection("users").doc(this.user.uid).collection("dialogs").doc(this.roomName).set({})
+				this.$emit("messageSent", false)
+			}
+
+			firestore.collection("dialogs").doc(this.roomName).collection("messages").orderBy("time")
+			.onSnapshot((querySnapshot) => {
+				let messages = []
+				let index = 0
+				querySnapshot.forEach((doc) => {
+					messages.push(doc.data())
+					messages[index].id = doc.id
+					index++
 				})
-			}
-			else {
 				this.loading = false
-			}
-			
+				this.$store.commit("getMessages", messages)
+			})
 		},
 		watch: {
 			messages(){
